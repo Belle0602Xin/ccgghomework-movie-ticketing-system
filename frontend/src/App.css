@@ -1,0 +1,139 @@
+.App {
+  padding: 20px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #333;
+  background-color: #f4f7f9;
+  min-height: 100vh;
+}
+
+
+.nav-menu {
+  display: flex;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0;
+  margin-bottom: 20px;
+}
+
+.nav-menu button {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #337ab7;
+  border-right: 1px solid #eee;
+}
+
+.nav-menu button.active {
+  background-color: #337ab7;
+  color: #fff;
+  font-weight: bold;
+}
+
+.reg-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 50px;
+}
+
+.reg-form {
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  width: 550px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.header-bar {
+  background-color: #d9edf7;
+  color: #31708f;
+  padding: 15px;
+  border-bottom: 1px solid #bce8f1;
+  font-weight: bold;
+  font-size: 18px;
+  text-align: center;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-body {
+  padding: 30px 40px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.form-row label {
+  width: 100px;
+  text-align: right;
+  margin-right: 15px;
+  font-weight: bold;
+  color: #666;
+}
+
+.form-row input[type="text"],
+.form-row input[type="password"] {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-row input:focus {
+  border-color: #66afea;
+  box-shadow: 0 0 8px rgba(102,175,233,0.5);
+}
+
+.gender-group {
+  display: flex;
+  gap: 30px;
+}
+
+.btn-blue {
+  background-color: #337ab7;
+  color: white;
+  border: 1px solid #2e6da4;
+  border-radius: 4px;
+  padding: 8px 25px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-blue:hover {
+  background-color: #286090;
+}
+
+.movie-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.movie-table th, .movie-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+}
+
+.movie-table th {
+  background-color: #f9f9f9;
+}
+
+.booking-panel {
+  background-color: #222;
+  color: #00ff00;
+  padding: 20px;
+  border-radius: 4px;
+  font-family: monospace;
+  margin-top: 10px;
+}
