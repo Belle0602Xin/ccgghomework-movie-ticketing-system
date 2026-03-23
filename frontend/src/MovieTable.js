@@ -3,36 +3,47 @@ import axios from 'axios';
 
 const MovieTable = ({ onBookSuccess }) => {
     const [movies, setMovies] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [booking, setBooking] = useState({ sid: '', count: '' });
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
     const loadData = (page = 0) => {
-        axios.get(`http://localhost:8080/api/movies?page=${page}`, { withCredentials: true })
+        if (loading) return;
+        setLoading(true);
+
+        const user = localStorage.getItem('currentUser');
+        axios.get(`http://localhost:8080/api/movies?page=${page}&user=${user}`, { withCredentials: true })
             .then(res => {
                 console.log("后端返回原始数据:", res.data);
                 if (res.data.code === 200) {
                     const movieContent = res.data.data.content || [];
                     setMovies(movieContent);
                     setTotalPages(res.data.data.totalPages || 0);
+                    setCurrentPage(page);
                 }
             })
             .catch(err => {
                 console.error("加载失败", err);
-                if(err.response && err.response.status === 400) {
-                    alert("登录失效，请重新登录");
-                }
-            });
+            })
+            .finally(() => setLoading(false));
     };
 
-    useEffect(() => { loadData(0); }, []);
+    useEffect(() => {
+        loadData(0);
+    }, []);
 
     const handleBook = () => {
-        if (!booking.sid || !booking.count) { alert("请完整填写场次ID和张数"); return; }
+        if (!booking.sid || !booking.count) {
+            alert("请完整填写场次ID和张数");
+            return;
+        }
 
+        const user = localStorage.getItem('currentUser');
         const params = new URLSearchParams();
         params.append('sid', booking.sid);
         params.append('count', booking.count);
+        params.append('user', user);
 
         axios.post('http://localhost:8080/api/book', params, { withCredentials: true })
             .then(res => {
@@ -58,38 +69,31 @@ const MovieTable = ({ onBookSuccess }) => {
                         backgroundColor: '#fff', borderRadius: '8px', color: '#333'
                     }}>
                         <p>
-                            <strong style={{ color: '#007bff' }}>场次 ID: {m.id || m.movieId}</strong> |
+                            <strong style={{color: '#007bff'}}>场次 ID: {m.id || m.movieId}</strong> |
                             电影编号: {m.filmId || m.f_id}
                         </p>
                         <p>
-                            票价: <span style={{ color: '#e4393c', fontWeight: 'bold' }}>${m.moviePrice || m.price}</span> |
+                            票价: <span
+                            style={{color: '#e4393c', fontWeight: 'bold'}}>${m.moviePrice || m.price}</span> |
                             上映时间: {m.movieTime || m.show_time}
                         </p>
                         <p>
-                            当前余票: <strong style={{ color: (m.ticketsAvailable || m.quota) > 0 ? 'green' : 'red' }}>
-                            {m.ticketsAvailable || m.quota}
+                            当前余票: <strong style={{color: m.ticketsAvailable > 0 ? 'green' : 'red'}}>
+                            {m.ticketsAvailable}
                         </strong> 张
                         </p>
                     </div>
                 )) : (
-                    <div style={{ textAlign: 'center', padding: '50px', color: '#999' }}>
-                        暂无排片数据，请确保已登录且数据库 t_schedule 有值
+                    <div style={{textAlign: 'center', padding: '50px', color: '#999'}}>
+                    {loading ? "加载中..." : "暂无排片数据，请确保数据库 t_schedule 有值"}
                     </div>
                 )}
             </div>
 
             <div className="pagination" style={{ marginTop: '20px', textAlign: 'center' }}>
-                <button disabled={currentPage === 0} onClick={() => {
-                    const p = currentPage - 1;
-                    setCurrentPage(p);
-                    loadData(p);
-                }}>上一页</button>
+                <button disabled={currentPage === 0 || loading} onClick={() => loadData(currentPage - 1)}>上一页</button>
                 <span style={{ margin: '0 15px' }}> 第 {currentPage + 1} 页 / 共 {totalPages} 页 </span>
-                <button disabled={currentPage >= totalPages - 1} onClick={() => {
-                    const p = currentPage + 1;
-                    setCurrentPage(p);
-                    loadData(p);
-                }}>下一页</button>
+                <button disabled={currentPage >= totalPages - 1 || loading} onClick={() => loadData(currentPage + 1)}>下一页</button>
             </div>
 
             <div className="header-bar" style={{ marginTop: '40px' }}>购票登记界面</div>

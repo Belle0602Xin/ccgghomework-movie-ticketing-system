@@ -18,10 +18,19 @@ public class Movie {
     @Column(name = "show_time")
     public String movieTime;
 
-    private Integer version;
-
     @Column(name = "f_id")
     public Integer filmId;
+
+    @Version
+    private Integer version;
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 
     public String getMovieName() {
         return "电影编号: " + filmId;
@@ -37,5 +46,9 @@ public class Movie {
 
     public Double getMoviePrice() {
         return moviePrice.doubleValue();
+    }
+
+    public Integer getFilmId() {
+        return this.filmId;
     }
 }

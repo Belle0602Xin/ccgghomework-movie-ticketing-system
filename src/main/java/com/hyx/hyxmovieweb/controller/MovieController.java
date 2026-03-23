@@ -23,16 +23,39 @@ public class MovieController {
     private MovieService movieService;
 
     @GetMapping("/movies")
-    public Result getMovies(@RequestParam(defaultValue = "0") int page) {
-        Page<Movie> moviePage = movieService.getMoviesPage(page);
+    public Result getMovies(@RequestParam(defaultValue = "0") int page,
+                            @RequestParam(required = false) String user,
+                            HttpSession session) {
 
+        String loginUser = (String) session.getAttribute("currentUser");
+
+        if (loginUser == null) {
+            loginUser = user;
+        }
+
+        if (loginUser == null) {
+            return Result.error("未登录");
+        }
+
+        Page<Movie> moviePage = movieService.getMoviesPage(page);
         return Result.ok("查询成功", moviePage);
     }
+//    public Result getMovies(@RequestParam(defaultValue = "0") int page, HttpSession session) {
+//        if (session.getAttribute("currentUser") == null) {
+//            return Result.error("未登录");
+//        }
+//
+//        Page<Movie> moviePage = movieService.getMoviesPage(page);
+//
+//        return Result.ok("查询成功", moviePage);
+//    }
 
     @PostMapping("/register")
-    public Result register(@RequestBody User user) {
+    public Result register(@RequestBody User user, HttpSession session) {
         // 1. 账号长度校验 (不少于3个字符)
-        if (user.username == null || user.username.length() < 3) return Result.error("账号过短");
+        if (user.username == null || user.username.length() < 3) {
+            return Result.error("账号过短");
+        }
 
         // 2. 密码长度校验 (6~20个字符)
         if (user.password == null || user.password.length() < 6 || user.password.length() > 20) {
@@ -55,20 +78,31 @@ public class MovieController {
         }
 
         movieService.addUser(user);
+
+        session.setAttribute("currentUser", user.username);
+
         return Result.ok("注册成功");
     }
 
     @PostMapping("/book")
-    public Result book(@RequestParam String sid, @RequestParam int count, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
+    public Result book(@RequestParam String sid,
+                       @RequestParam int count,
+                       @RequestParam(required = false) String user,
+                       HttpSession session) {
+
+        String loginUser = (String) session.getAttribute("currentUser");
+        if (loginUser == null) {
+            loginUser = user;
+        }
+
+        if (loginUser == null) {
             return Result.error("请登录后再进行购票操作");
         }
 
         int movieSid = Integer.parseInt(sid);
-        String currentUid = (String) session.getAttribute("currentUser");
 
         try {
-            String res = movieService.bookTicket(movieSid, count, currentUid);
+            String res = movieService.bookTicket(movieSid, count, loginUser);
             return "SUCCESS".equals(res) ? Result.ok("购票成功") : Result.error("购票失败");
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -76,14 +110,30 @@ public class MovieController {
     }
 
     @GetMapping("/orders")
-    public Result getOrders(HttpSession session) {
-        String currentUser = (String) session.getAttribute("currentUser");
-
-        if (currentUser == null) {
-            return Result.error("请先登录后访问");
+    public Result getOrders(@RequestParam(required = false) String user, HttpSession session) {
+        String loginUser = (String) session.getAttribute("currentUser");
+        if (loginUser == null) {
+            loginUser = user;
         }
 
-        return Result.ok("获取成功", movieService.getOrders());
+        if (loginUser == null) {
+            return Result.error("未登录，无法查看订单");
+        }
+
+        return Result.ok("获取成功", movieService.getOrdersByUsername(loginUser));
+    }
+
+    @GetMapping("/sales")
+    public Result getSales(@RequestParam(required = false) String user, HttpSession session) {
+        String loginUser = (String) session.getAttribute("currentUser");
+        if (loginUser == null) {
+            loginUser = user;
+        }
+        if (loginUser == null) {
+            return Result.error("未登录");
+        }
+
+        return Result.ok("获取成功", movieService.getSalesStatistics());
     }
 
     @PostMapping("/login")

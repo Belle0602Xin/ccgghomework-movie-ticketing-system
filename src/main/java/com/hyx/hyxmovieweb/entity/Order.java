@@ -26,4 +26,6 @@ public class Order implements Serializable {
     @Column(name = "schedule_id")
     public Integer sessionId;
 
+    @Transient
+    public String movieName;
 }

@@ -18,6 +18,7 @@ public class MovieService {
     @Autowired private MovieRepository movieRepo;
     @Autowired private UserRepository userRepo;
     @Autowired private OrderRepository orderRepo;
+    @Autowired private FilmRepository filmRepo;
 
     private String encodePassword(String password) {
         return DigestUtils.md5DigestAsHex(password.getBytes());
@@ -83,7 +84,41 @@ public class MovieService {
         return orderRepo.findAll();
     }
 
+    public List<Order> getSalesStatistics() {
+        List<Order> allOrders = orderRepo.findAll();
+        for (Order order : allOrders) {
+            movieRepo.findById(order.sessionId).ifPresent(schedule -> {
+                filmRepo.findById(schedule.getFilmId()).ifPresent(film -> {
+                    order.movieName = film.getName();
+                });
+            });
+
+            if (order.movieName == null) {
+                order.movieName = "场次: " + order.sessionId;
+            }
+        }
+        return allOrders;
+    }
+
     public List<Order> getOrdersByUsername(String username) {
-        return orderRepo.findAll();
+        User user = userRepo.findByUsername(username);
+        if (user == null) {
+            return List.of();
+        }
+
+        List<Order> orders = orderRepo.findByCustomerId(user.getId());
+
+        for (Order order : orders) {
+            movieRepo.findById(order.sessionId).ifPresent(schedule -> {
+                filmRepo.findById(schedule.getFilmId()).ifPresent(film -> {
+                    order.movieName = film.getName();
+                });
+            });
+
+            if (order.movieName == null) {
+                order.movieName = "场次: " + order.sessionId;
+            }
+        }
+        return orders;
     }
 }

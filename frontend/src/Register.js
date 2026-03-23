@@ -22,19 +22,10 @@ const Register = ({ onBack }) => {
         axios.post('http://localhost:8080/api/register', formData)
             .then(res => {
                 if (res.data.code === 200 && frontendErrors.length === 0) {
-                    alert("注册成功！");
-                    onBack();
-                } else {
-                    const backendErrors = Array.isArray(res.data.data) ? res.data.data : [];
-
-                    const allErrors = [...frontendErrors, ...backendErrors];
-
-                    if (allErrors.length > 0) {
-                        const formattedErrors = allErrors.map(msg => `• ${msg}`).join('\n');
-                        alert(`参数不符合要求：\n\n${formattedErrors}`);
-                    } else if (res.data.message) {
-                        alert(res.data.message);
-                    }
+                    alert("注册成功！已为您自动登录");
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('currentUser', formData.username);
+                    window.location.href = "/";
                 }
             })
             .catch(() => alert("服务端连接失败，请检查后端程序"));

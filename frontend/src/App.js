@@ -14,15 +14,26 @@ function App() {
     const [isRegistering, setIsRegistering] = useState(false);
     const [activeTab, setActiveTab] = useState('场次列表');
     const [orders, setOrders] = useState([]);
+    const [isOrdersLoading, setIsOrdersLoading] = useState(false);
 
     const fetchOrders = () => {
-        axios.get('http://localhost:8080/api/orders')
+        const user = localStorage.getItem('currentUser');
+        if (!user) return;
+
+        setIsOrdersLoading(true);
+
+        axios.get(`http://localhost:8080/api/orders?user=${user}`)
             .then(res => {
                 if (res.data.code === 200) {
                     setOrders(res.data.data || []);
                 }
             })
-            .catch(err => console.error("获取订单失败", err));
+            .catch(err => console.error("获取订单失败", err))
+            .finally(() => {
+                setTimeout(() => {
+                    setIsOrdersLoading(false);
+                }, 500);
+            });
     };
 
     useEffect(() => {
@@ -30,11 +41,6 @@ function App() {
             fetchOrders();
         }
     }, [isLoggedIn]);
-
-    const handleLogout = () => {
-        localStorage.removeItem('isLoggedIn');
-        window.location.reload();
-    };
 
     if (isRegistering) {
         return <Register onBack={() => setIsRegistering(false)} />;
@@ -87,8 +93,8 @@ function App() {
 
             <div className="content-area" style={{marginTop: '20px'}}>
                 {activeTab === '场次列表' && <MovieTable onBookSuccess={fetchOrders}/>}
-                {activeTab === '我的订单' && <OrderList orders={orders}/>}
-                {activeTab === '销售统计' && <SalesStatus orders={orders}/>}
+                {activeTab === '我的订单' && <OrderList orders={orders} isLoading={isOrdersLoading} />}
+                {activeTab === '销售统计' && <SalesStatus orders={orders} isLoading={isOrdersLoading} />}
             </div>
         </div>
     );
