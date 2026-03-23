@@ -69,8 +69,10 @@ const MovieTable = ({ onBookSuccess }) => {
                         backgroundColor: '#fff', borderRadius: '8px', color: '#333'
                     }}>
                         <p>
-                            <strong style={{color: '#007bff'}}>场次 ID: {m.id || m.movieId}</strong> |
-                            电影编号: {m.filmId || m.f_id}
+                            <strong style={{color: '#007bff'}}>场次 ID: {m.id || m.movieId}</strong>
+                            <span style={{ margin: '0 10px', color: '#ccc' }}>|</span>
+                            <span style={{ fontWeight: 'bold', color: '#2c3e50' }}>{m.movieName || "加载中..."}</span>
+                            <span style={{ fontSize: '0.85em', color: '#7f8c8d', marginLeft: '5px' }}>(电影编号: {m.filmId || m.f_id})</span>
                         </p>
                         <p>
                             票价: <span

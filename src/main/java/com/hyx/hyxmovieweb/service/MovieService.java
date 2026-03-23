@@ -45,7 +45,16 @@ public class MovieService {
     }
 
     public Page<Movie> getMoviesPage(int page) {
-        return movieRepo.findAll(PageRequest.of(page, 5));
+        Page<Movie> moviePage = movieRepo.findAll(PageRequest.of(page, 5));
+
+        for (Movie movie : moviePage.getContent()) {
+            if (movie.getFilmId() != null) {
+                filmRepo.findById(movie.getFilmId()).ifPresent(film -> {
+                    movie.setMovieName(film.getName());
+                });
+            }
+        }
+        return moviePage;
     }
 
     @Transactional

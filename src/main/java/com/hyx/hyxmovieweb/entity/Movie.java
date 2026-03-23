@@ -24,24 +24,19 @@ public class Movie {
     @Version
     private Integer version;
 
+    @Transient
+    private String movieName;
+
     public Integer getVersion() {
         return version;
     }
 
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
     public String getMovieName() {
-        return "电影编号: " + filmId;
+        return this.movieName;
     }
 
     public Integer getTicketsAvailable() {
         return ticketsAvailable;
-    }
-
-    public void setTicketsAvailable(Integer quota) {
-        this.ticketsAvailable = quota;
     }
 
     public Double getMoviePrice() {
@@ -50,5 +45,17 @@ public class Movie {
 
     public Integer getFilmId() {
         return this.filmId;
+    }
+
+    public void setTicketsAvailable(Integer quota) {
+        this.ticketsAvailable = quota;
+    }
+
+    public void setMovieName(String movieName) {
+        this.movieName = movieName;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }
