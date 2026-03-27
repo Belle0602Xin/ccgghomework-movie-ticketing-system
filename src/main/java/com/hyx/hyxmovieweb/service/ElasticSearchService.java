@@ -41,7 +41,7 @@ public class ElasticSearchService {
             es.setDirector(f.getDirector());
             es.setHero(f.getHero());
             es.setHeroine(f.getHeroine() == null ? "未知" : f.getHeroine());
-            es.setProduction(f.getProduction() != null ? f.getProduction().toString() : null);
+            es.setProduction(f.getProduction() != null ? f.getProduction().toString() : "未知年份");
 
             try {
                 String outline = jdbcTemplate.queryForObject(

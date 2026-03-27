@@ -21,35 +21,11 @@ public class Film {
     @Column(name = "hero")
     private String hero;
 
-    @Transient
+    @Column(name = "heroine")
     private String heroine;
 
-    public String getHeroine() {
-        return heroine;
-    }
-
-    public void setHeroine(String heroine) {
-        this.heroine = heroine;
-    }
-
-    public String getProduction() {
-        return production;
-    }
-
-    public void setProduction(String production) {
-        this.production = production;
-    }
-
-    public String getOutline() {
-        return outline;
-    }
-
-    public void setOutline(String outline) {
-        this.outline = outline;
-    }
-
-    @Transient
-    private String production;
+    @Column(name = "production")
+    private java.sql.Date production;
 
     @Transient
     private String outline;
@@ -63,7 +39,7 @@ public class Film {
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
     public void setName(String name) {
@@ -92,5 +68,29 @@ public class Film {
 
     public void setHero(String hero) {
         this.hero = hero;
+    }
+
+    public java.sql.Date getProduction() {
+        return production;
+    }
+
+    public void setProduction(java.sql.Date production) {
+        this.production = production;
+    }
+
+    public String getHeroine() {
+        return heroine;
+    }
+
+    public void setHeroine(String heroine) {
+        this.heroine = heroine;
+    }
+
+    public String getOutline() {
+        return outline;
+    }
+
+    public void setOutline(String outline) {
+        this.outline = outline;
     }
 }
