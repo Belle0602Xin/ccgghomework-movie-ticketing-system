@@ -1,29 +1,26 @@
 package com.hyx.hyxmovieweb.component;
 
+import com.mongodb.lang.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class RequestMappingInspector implements CommandLineRunner {
 
-    private final RequestMappingHandlerMapping handlerMapping;
-
-    public RequestMappingInspector(RequestMappingHandlerMapping handlerMapping) {
-        this.handlerMapping = handlerMapping;
-    }
+    private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     @Override
-    public void run(String... args) {
+    public void run(@NonNull String... args) {
         System.out.println("\n--- API Self Inspection Start Scanning Mappings ---");
 
-        Map<RequestMappingInfo, HandlerMethod> methods = handlerMapping.getHandlerMethods();
+        Map<RequestMappingInfo, HandlerMethod> methods = requestMappingHandlerMapping.getHandlerMethods();
 
         methods.forEach((info, method) -> {
             String className = method.getBeanType().getSimpleName();

@@ -4,7 +4,6 @@ import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import com.hyx.hyxmovieweb.entity.FilmElasticSearch;
 import com.hyx.hyxmovieweb.entity.Film;
 import com.hyx.hyxmovieweb.repository.FilmRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchAggregations;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -18,21 +17,25 @@ import java.util.stream.Collectors;
 @Service
 public class ElasticSearchService {
 
-    @Autowired
-    private ElasticsearchOperations esOps;
+    private final ElasticsearchOperations elasticsearchOperations;
 
-    @Autowired
-    private FilmRepository filmRepository;
+    private final FilmRepository filmRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
+
+    public ElasticSearchService(ElasticsearchOperations elasticsearchOperations, FilmRepository filmRepository, JdbcTemplate jdbcTemplate) {
+        this.elasticsearchOperations = elasticsearchOperations;
+        this.filmRepository = filmRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     public void createIndexWithMapping() {
-        esOps.indexOps(FilmElasticSearch.class).createWithMapping();
+        elasticsearchOperations.indexOps(FilmElasticSearch.class).createWithMapping();
     }
 
     public void syncAllToEs() {
         List<Film> films = filmRepository.findAll();
+
         List<FilmElasticSearch> esList = films.stream().map(f -> {
             FilmElasticSearch es = new FilmElasticSearch();
             es.setId(f.getId());
@@ -55,12 +58,18 @@ public class ElasticSearchService {
             return es;
         }).collect(Collectors.toList());
 
-        esOps.save(esList);
+        elasticsearchOperations.save(esList);
     }
 
 
-    public SearchPage<FilmElasticSearch> freeSearch(String content, int pageNo, int pageSize) {
-        if (content == null || content.isEmpty()) return null;
+    public Object freeSearch(Map<String, Object> condition) {
+        String content = (String) condition.get("content");
+        if (content == null || content.isEmpty()) {
+            throw new RuntimeException("Search content cannot be empty");
+        }
+
+        int pageNo = (int) condition.getOrDefault("pageNo", 1);
+        int pageSize = (int) condition.getOrDefault("pageSize", 10);
 
         NativeQuery query = NativeQuery.builder()
                 .withQuery(q -> q.multiMatch(m -> m
@@ -71,13 +80,17 @@ public class ElasticSearchService {
                 .withPageable(PageRequest.of(pageNo, pageSize))
                 .build();
 
-        SearchHits<FilmElasticSearch> searchHits = esOps.search(query, FilmElasticSearch.class);
-        return SearchHitSupport.searchPageFor(searchHits, query.getPageable());
+        return performSearch(content, pageNo - 1, pageSize);
     }
 
-//    public Map<String, Long> countByClassify() {
-//        return new HashMap<>();
-//    }
+    private SearchPage<FilmElasticSearch> performSearch(String content, int pageNo, int pageSize) {
+
+        NativeQuery query = NativeQuery.builder()
+                .withQuery(q -> q.multiMatch(m -> m.fields("name", "director").query(content)))
+                .withPageable(PageRequest.of(pageNo, pageSize))
+                .build();
+        return SearchHitSupport.searchPageFor(elasticsearchOperations.search(query, FilmElasticSearch.class), query.getPageable());
+    }
 
     public Map<String, Long> countByClassify() {
         NativeQuery query = NativeQuery.builder()
@@ -85,7 +98,7 @@ public class ElasticSearchService {
                 .withMaxResults(0)
                 .build();
 
-        SearchHits<FilmElasticSearch> searchHits = esOps.search(query, FilmElasticSearch.class);
+        SearchHits<FilmElasticSearch> searchHits = elasticsearchOperations.search(query, FilmElasticSearch.class);
 
         Map<String, Long> result = new HashMap<>();
 
@@ -99,28 +112,35 @@ public class ElasticSearchService {
         }
         return result;
     }
-
-    public List<FilmElasticSearch> searchByCondition(Map<String, Object> condition) {
-        NativeQuery query = NativeQuery.builder()
-                .withQuery(q -> q.bool(b -> {
-                    if (condition.get("name") != null) {
-                        b.must(m -> m.match(t -> t.field("name").query(condition.get("name").toString())));
-                    }
-
-                    if (condition.get("classify") != null) {
-                        b.must(m -> m.match(t -> t.field("classify").query(condition.get("classify").toString())));
-                    }
-
-                    if (condition.get("year") != null) {
-                        b.must(m -> m.match(t -> t.field("production").query(condition.get("year").toString())));
-                    }
-
-                    return b;
-                }))
-                .withMaxResults(10)
-                .build();
-
-        return esOps.search(query, FilmElasticSearch.class)
-                .getSearchHits().stream().map(SearchHit::getContent).collect(Collectors.toList());
-    }
 }
+
+
+//    public Map<String, Long> countByClassify() {
+//        return new HashMap<>();
+//    }
+
+
+//public List<FilmElasticSearch> searchByCondition(Map<String, Object> condition) {
+//    NativeQuery query = NativeQuery.builder()
+//            .withQuery(q -> q.bool(b -> {
+//                if (condition.get("name") != null) {
+//                    b.must(m -> m.match(t -> t.field("name").query(condition.get("name").toString())));
+//                }
+//
+//                if (condition.get("classify") != null) {
+//                    b.must(m -> m.match(t -> t.field("classify").query(condition.get("classify").toString())));
+//                }
+//
+//                if (condition.get("year") != null) {
+//                    b.must(m -> m.match(t -> t.field("production").query(condition.get("year").toString())));
+//                }
+//
+//                return b;
+//            }))
+//            .withMaxResults(10)
+//            .build();
+//
+//    return elasticsearchOperations.search(query, FilmElasticSearch.class)
+//            .getSearchHits().stream().map(SearchHit::getContent).collect(Collectors.toList());
+
+//SearchHits<FilmElasticSearch> searchHits = elasticsearchOperations.search(query, FilmElasticSearch.class);

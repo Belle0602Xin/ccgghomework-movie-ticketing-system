@@ -1,7 +1,9 @@
 package com.hyx.hyxmovieweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
+@Data
 @Entity
 @Table(name = "t_film")
 public class Film {
@@ -29,68 +31,4 @@ public class Film {
 
     @Transient
     private String outline;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getClassify() {
-        return classify;
-    }
-
-    public void setClassify(String classify) {
-        this.classify = classify;
-    }
-
-    public String getDirector() {
-        return director;
-    }
-
-    public void setDirector(String director) {
-        this.director = director;
-    }
-
-    public String getHero() {
-        return hero;
-    }
-
-    public void setHero(String hero) {
-        this.hero = hero;
-    }
-
-    public java.sql.Date getProduction() {
-        return production;
-    }
-
-    public void setProduction(java.sql.Date production) {
-        this.production = production;
-    }
-
-    public String getHeroine() {
-        return heroine;
-    }
-
-    public void setHeroine(String heroine) {
-        this.heroine = heroine;
-    }
-
-    public String getOutline() {
-        return outline;
-    }
-
-    public void setOutline(String outline) {
-        this.outline = outline;
-    }
 }

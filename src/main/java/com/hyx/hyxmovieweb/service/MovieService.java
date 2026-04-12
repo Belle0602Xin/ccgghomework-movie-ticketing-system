@@ -5,7 +5,6 @@ import com.hyx.hyxmovieweb.repository.*;
 import jakarta.transaction.Transactional;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,23 +18,30 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class MovieService {
 
-    @Autowired private MovieRepository movieRepo;
-    @Autowired private UserRepository userRepo;
-    @Autowired private OrderRepository orderRepo;
-    @Autowired private FilmRepository filmRepo;
+    private final MovieRepository movieRepository;
+    private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final FilmRepository filmRepository;
 
-    @Autowired
-    private RedissonClient redissonClient;
+    private final RedissonClient redissonClient;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public MovieService(MovieRepository movieRepository, UserRepository userRepository, OrderRepository orderRepository, FilmRepository filmRepository, RedissonClient redissonClient, RedisTemplate<String, Object> redisTemplate) {
+        this.movieRepository = movieRepository;
+        this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
+        this.filmRepository = filmRepository;
+        this.redissonClient = redissonClient;
+        this.redisTemplate = redisTemplate;
+    }
 
     private String encodePassword(String password) {
         return DigestUtils.md5DigestAsHex(password.getBytes());
     }
 
     public User login(String username, String password) {
-        User user = userRepo.findByUsername(username);
+        User user = userRepository.findByUsername(username);
 
         if (user != null && user.getPassword().equals(encodePassword(password))) {
             return user;
@@ -51,15 +57,15 @@ public class MovieService {
             user.setSalt("default_salt");
         }
 
-        userRepo.save(user);
+        userRepository.save(user);
     }
 
     public Page<Movie> getMoviesPage(int page) {
-        Page<Movie> moviePage = movieRepo.findAll(PageRequest.of(page, 5));
+        Page<Movie> moviePage = movieRepository.findAll(PageRequest.of(page, 5));
 
         for (Movie movie : moviePage.getContent()) {
             if (movie.getFilmId() != null) {
-                filmRepo.findById(movie.getFilmId()).ifPresent(film -> {
+                filmRepository.findById(movie.getFilmId()).ifPresent(film -> {
                     movie.setMovieName(film.getName());
                 });
             }
@@ -67,49 +73,41 @@ public class MovieService {
         return moviePage;
     }
 
-    public Movie findMovieById(int mid) {
-        return movieRepo.findById(mid).orElse(null);
-    }
-
-    public List<Order> getOrders() {
-        return orderRepo.findAll();
-    }
-
     public List<Order> getSalesStatistics() {
-        List<Order> allOrders = orderRepo.findAll();
+        List<Order> allOrders = orderRepository.findAll();
         for (Order order : allOrders) {
-            movieRepo.findById(order.sessionId).ifPresent(schedule -> {
-                filmRepo.findById(schedule.getFilmId()).ifPresent(film -> {
-                    order.movieName = film.getName();
-                });
-            });
+            movieRepository.findById(order.scheduleId)
+                    .flatMap(schedule -> filmRepository.findById(schedule.getFilmId()))
+                    .ifPresent(film -> order.movieName = film.getName());
 
             if (order.movieName == null) {
-                order.movieName = "场次: " + order.sessionId;
+                order.movieName = "场次: " + order.scheduleId;
             }
         }
         return allOrders;
     }
 
     public List<Order> getOrdersByUsername(String username) {
-        User user = userRepo.findByUsername(username);
+        User user = userRepository.findByUsername(username);
         if (user == null) {
             return List.of();
         }
 
-        List<Order> orders = orderRepo.findByCustomerId(user.getId());
+        List<Order> orders = orderRepository.findByCustomerId(user.getId());
 
-        for (Order order : orders) {
-            movieRepo.findById(order.sessionId).ifPresent(schedule -> {
-                filmRepo.findById(schedule.getFilmId()).ifPresent(film -> {
-                    order.movieName = film.getName();
-                });
-            });
+        for (Order order : getOrders(orders)) {
+            movieRepository.findById(order.getScheduleId())
+                    .flatMap(movie -> filmRepository.findById(movie.getFilmId()))
+                    .ifPresent(film -> order.setMovieName(film.getName()));
 
             if (order.movieName == null) {
-                order.movieName = "场次: " + order.sessionId;
+                order.movieName = "场次: " + order.scheduleId;
             }
         }
+        return orders;
+    }
+
+    private static List<Order> getOrders(List<Order> orders) {
         return orders;
     }
 
@@ -127,21 +125,23 @@ public class MovieService {
                 if (stock != null && stock >= count) {
                     redisTemplate.opsForValue().decrement(stockKey, count);
 
-                    Movie movie = movieRepo.findById(mid).orElseThrow(() -> new RuntimeException("场次不存在"));
-                    movie.setTicketsAvailable(movie.getTicketsAvailable() - count);
-                    movieRepo.save(movie);
+                    Movie movie = movieRepository.findById(mid).orElseThrow(() -> new RuntimeException("场次不存在"));
+
+                    movie.setTicketsQuota(movie.getTicketsQuota() - count);
+                    movieRepository.save(movie);
 
                     Order order = new Order();
                     order.orderTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                    order.sessionId = mid;
-                    order.ticketsCount = count;
-                    order.totalAmount = count * movie.getMoviePrice();
+                    order.scheduleId = mid;
 
-                    User user = userRepo.findByUsername(uid);
+                    order.ticketsQuality = count;
+                    order.totalPrice = count * movie.getMoviePrice();
+
+                    User user = userRepository.findByUsername(uid);
                     if (user != null) {
                         order.customerId = user.getId();
                     }
-                    orderRepo.save(order);
+                    orderRepository.save(order);
 
                     return "Success: User " + uid + " got the ticket.";
                 } else {
@@ -159,4 +159,17 @@ public class MovieService {
         }
         return "Fail: System busy, try again.";
     }
+
+    private static double getMoviePrice(Movie movie) {
+        return movie.getMoviePrice();
+    }
 }
+
+
+//public Movie findMovieById(int mid) {
+//    return movieRepository.findById(mid).orElse(null);
+//}
+//
+//public List<Order> getOrders() {
+//    return orderRepository.findAll();
+//}

@@ -1,8 +1,8 @@
 package com.hyx.hyxmovieweb.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationListener;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -13,17 +13,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
-public class RequestMappingPrinter implements ApplicationListener<ContextRefreshedEvent> {
+@RequiredArgsConstructor
+public class RequestMappingPrinter {
 
-    @Autowired
-    private RequestMappingHandlerMapping handlerMapping;
+    private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
+    @EventListener(ContextRefreshedEvent.class)
+    public void onApplicationEvent() {
         System.out.println("\n--- 启动自检：所有 API 映射列表 ---");
 
         Map<String, List<Map.Entry<RequestMappingInfo, HandlerMethod>>> groupedMethods =
-                handlerMapping.getHandlerMethods().entrySet().stream()
+                requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
                         .collect(Collectors.groupingBy(e -> e.getValue().getBeanType().getSimpleName()));
 
         groupedMethods.forEach((className, methods) -> {

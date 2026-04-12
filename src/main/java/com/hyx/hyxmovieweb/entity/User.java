@@ -1,9 +1,9 @@
 package com.hyx.hyxmovieweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
-import java.util.Date;
-
+@Data
 @Entity
 @Table(name = "t_customer")
 public class User {
@@ -18,35 +18,11 @@ public class User {
     public String password;
 
     @Column(name = "alias")
-    public String nickname;
+    public String alias;
 
     public String gender;
-    public String phone;
     public String email;
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Integer getId() {
-        return id;
-    }
 
     @Column(name = "salt")
     private String salt = "";
-
-    public String getSalt() {
-        return salt;
-    }
-
-    public void setSalt(String salt) {
-        this.salt = salt;
-    }
-
-    @Column(name = "register_time")
-    private Date registerTime = new Date();
 }

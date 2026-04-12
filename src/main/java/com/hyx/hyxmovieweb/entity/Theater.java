@@ -1,7 +1,9 @@
 package com.hyx.hyxmovieweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
+@Data
 @Entity
 @Table(name = "t_theater")
 public class Theater {
@@ -10,22 +12,4 @@ public class Theater {
     private Integer id;
 
     private String name;
-    private String location;
-    private Integer capacity;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 }

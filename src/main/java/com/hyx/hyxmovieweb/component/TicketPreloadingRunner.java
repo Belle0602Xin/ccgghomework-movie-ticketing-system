@@ -1,7 +1,7 @@
 package com.hyx.hyxmovieweb.component;
 
 import com.hyx.hyxmovieweb.repository.FilmRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.mongodb.lang.NonNull;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,14 +12,17 @@ import org.springframework.stereotype.Component;
 @Order(1)
 public class TicketPreloadingRunner implements CommandLineRunner {
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
-    private FilmRepository filmRepository;
+    private final FilmRepository filmRepository;
+
+    public TicketPreloadingRunner(RedisTemplate<String, Object> redisTemplate, FilmRepository filmRepository) {
+        this.redisTemplate = redisTemplate;
+        this.filmRepository = filmRepository;
+    }
 
     @Override
-    public void run(String... args) {
+    public void run(@NonNull String... args) {
         filmRepository.findAll().forEach(film -> {
             String key = "ticket:stock:" + film.getId();
             redisTemplate.opsForValue().set(key, 100);

@@ -1,64 +1,61 @@
 package com.hyx.hyxmovieweb.controller;
 
 import com.hyx.hyxmovieweb.entity.MongoDBOrder;
-import com.hyx.hyxmovieweb.entity.Result;
 import com.hyx.hyxmovieweb.service.MongoDBService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/mongo")
+@RequestMapping("/mongodb-test")
 public class MongoDBController {
 
-    @Autowired
-    private MongoDBService mongoDBService;
+    private final MongoDBService mongoDBService;
 
-    @PostMapping("/transferOders")
-    public Result transferOrders() {
-        try {
-            mongoDBService.transferAllOrders();
-
-            return Result.ok("MySQL订单导入MongoDB成功");
-        } catch (Exception e) {
-            return Result.error("订单迁移失败：" + e.getMessage());
-        }
+    public MongoDBController(MongoDBService mongoDBService) {
+        this.mongoDBService = mongoDBService;
     }
 
-    @PostMapping("/transferMyOrders")
-    public Result transferCustom() {
+    @PostMapping("/all-orders-transfer")
+    public ResponseEntity<Map<String, Object>> transferOrders() {
         mongoDBService.transferAllOrders();
-
-        return Result.ok("个人订单导入成功");
+        return ResponseEntity.ok(Map.of("resultCode", 0, "message", "MySQL成功导入MongoDB"));
     }
 
-    @PostMapping("/myOrders")
-    public Result myOrders(@RequestParam(defaultValue = "1") Integer pageNo,
-                           @RequestParam(defaultValue = "10") Integer pageSize,
-                           HttpSession session) {
+    @PostMapping("/my-orders-transfer")
+    public ResponseEntity<Map<String, Object>> transferCustom() {
+        mongoDBService.transferToMyOrders();
+        return ResponseEntity.ok(Map.of("resultCode", 0, "message", "个人订单导入成功"));
+    }
 
+    @PostMapping("/my-orders")
+    public ResponseEntity<Map<String, Object>> getMyOrders(@RequestParam(defaultValue = "1") Integer pageNo,
+                                                           @RequestParam(defaultValue = "10") Integer pageSize,
+                                                           HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
-
-        if (userId == null) {
-            userId = 79;
-        }
-
         List<MongoDBOrder> orders = mongoDBService.getMyOrdersPaged(userId, pageNo, pageSize);
 
-        return Result.ok("获取成功", orders);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("resultCode", 0);
+        response.put("message", "成功");
+        response.put("data", orders);
+
+        return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/top3ByClassify")
-    public Result top3ByClassify() {
-        try {
-            List<Map> top3 = mongoDBService.getTop3Classify();
+    @GetMapping("/top-classify-statistics")
+    public ResponseEntity<Map<String, Object>> top3ByClassify() {
+        List<Map<String, Object>> statistics = mongoDBService.getTop3Classify();
 
-            return Result.ok("分类排行统计成功", top3);
-        } catch (Exception e) {
-            return Result.error("分类排行统计失败：" + e.getMessage());
-        }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("resultCode", 0);
+        response.put("message", "成功");
+        response.put("data", statistics);
+
+        return ResponseEntity.ok(response);
     }
 }

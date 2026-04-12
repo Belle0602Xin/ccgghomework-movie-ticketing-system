@@ -28,7 +28,6 @@ public class RedissonConfig {
         template.setHashKeySerializer(RedisSerializer.string());
         template.setValueSerializer(RedisSerializer.json());
         template.setHashValueSerializer(RedisSerializer.json());
-
         template.afterPropertiesSet();
 
         return template;

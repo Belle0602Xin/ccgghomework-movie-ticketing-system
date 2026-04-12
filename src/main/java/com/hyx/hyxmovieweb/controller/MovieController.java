@@ -3,10 +3,10 @@ package com.hyx.hyxmovieweb.controller;
 import com.hyx.hyxmovieweb.entity.*;
 import com.hyx.hyxmovieweb.service.MovieService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 @CrossOrigin(
         origins = "http://localhost:3000",
@@ -18,8 +18,11 @@ import org.springframework.http.ResponseEntity;
 @RequestMapping("/api")
 public class MovieController {
 
-    @Autowired
-    private MovieService movieService;
+    private final MovieService movieService;
+
+    public MovieController(MovieService movieService) {
+        this.movieService = movieService;
+    }
 
     @GetMapping("/movies")
     public Result getMovies(@RequestParam(defaultValue = "0") int page,
@@ -54,7 +57,7 @@ public class MovieController {
             return Result.error("性别不能为空");
         }
 
-        if (user.nickname == null || user.nickname.length() < 2 || user.nickname.length() > 20) {
+        if (user.alias == null || user.alias.length() < 2 || user.alias.length() > 20) {
             return Result.error("昵称长度2~20");
         }
 
@@ -68,8 +71,8 @@ public class MovieController {
         return Result.ok("注册成功");
     }
 
-    @PostMapping("/book")
-    public ResponseEntity<Result> book(@RequestParam String sid,
+    @PostMapping("/ticket-booking")
+    public ResponseEntity<String> book(@RequestParam String sid,
                                        @RequestParam int count,
                                        @RequestParam(required = false) String user,
                                        HttpSession session) {
@@ -77,17 +80,12 @@ public class MovieController {
         String loginUser = (user != null) ? user : "testUser";
         int movieSid = Integer.parseInt(sid);
 
-        try {
-            String res = movieService.bookTicket(movieSid, count, loginUser);
+        String result = movieService.bookTicket(movieSid, count, loginUser);
 
-            if (res.contains("Success")) {
-                return ResponseEntity.ok(Result.ok(res));
-            } else {
-                return ResponseEntity.status(400).body(Result.error(res));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(400).body(Result.error(e.getMessage()));
+        if (result.contains("Success")) {
+            return ResponseEntity.ok(result);
         }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
     }
 
     @GetMapping("/orders")
@@ -127,7 +125,7 @@ public class MovieController {
         if (user != null) {
             session.setAttribute("currentUser", username);
 
-            return Result.ok("登录成功", user.nickname);
+            return Result.ok("登录成功", user.alias);
         }
         return Result.error("账号或密码错误");
     }
@@ -142,6 +140,23 @@ public class MovieController {
         return Result.ok("数据库数据已是最新");
     }
 }
+
+//    @PostMapping("/test")
+//    public ResponseEntity test() {
+//        return ResponseEntity.ok("数据库版本自动实时保存");
+//    }
+//
+//    @PostMapping("/test1")
+//    @ResponseStatus(HttpStatus.OK)
+//    public String test1() {
+//        return "数据库版本自动实时保存";
+//    }
+//
+//    @PostMapping("/load")
+//    public Result load() {
+//        return Result.ok("数据库数据已是最新");
+//    }
+
 
 //    public Result getMovies(@RequestParam(defaultValue = "0") int page, HttpSession session) {
 //        if (session.getAttribute("currentUser") == null) {

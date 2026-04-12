@@ -2,59 +2,76 @@ package com.hyx.hyxmovieweb.service;
 
 import com.hyx.hyxmovieweb.entity.*;
 import com.hyx.hyxmovieweb.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.bson.Document;
 
 import java.util.*;
+
 
 @Service
 public class MongoDBService {
 
-    @Autowired private OrderRepository mysqlOrderRepo;
-    @Autowired private MovieRepository movieRepo;
-    @Autowired private FilmRepository filmRepo;
-    @Autowired private MongoTemplate mongoTemplate;
+    private final OrderRepository orderRepository;
+    private final MovieRepository movieRepository;
+    private final FilmRepository filmRepository;
+    private final MongoTemplate mongoTemplate;
 
-    public void transferAllOrders() {
-        List<Order> allMysqlOrders = mysqlOrderRepo.findAll();
+    public MongoDBService(OrderRepository orderRepository, MovieRepository movieRepository, FilmRepository filmRepository, MongoTemplate mongoTemplate) {
+        this.orderRepository = orderRepository;
+        this.movieRepository = movieRepository;
+        this.filmRepository = filmRepository;
+        this.mongoTemplate = mongoTemplate;
+    }
 
+    private MongoDBOrder convertToMongoOrder(Order mo) {
+        MongoDBOrder mongoDBOrder = new MongoDBOrder();
+        mongoDBOrder.setOrderTime(mo.orderTime);
+        mongoDBOrder.setPrice(mo.totalPrice);
+        mongoDBOrder.setQuantity(mo.ticketsQuality);
+        mongoDBOrder.setCustomerId(mo.customerId);
 
-        mongoTemplate.dropCollection("orders");
-
-        for (Order mo : allMysqlOrders) {
-            MongoDBOrder mongoDBOrder = new MongoDBOrder();
-            mongoDBOrder.setOrderTime(mo.orderTime);
-            mongoDBOrder.setPrice(mo.totalAmount);
-            mongoDBOrder.setQuantity(mo.ticketsCount);
-            mongoDBOrder.setCustomerId(mo.customerId);
-
-            movieRepo.findById(mo.sessionId).ifPresent(movie -> {
-                filmRepo.findById(movie.getFilmId()).ifPresent(film -> {
+        movieRepository.findById(mo.scheduleId)
+                .flatMap(movie -> filmRepository.findById(movie.getFilmId()))
+                .ifPresent(film -> {
                     mongoDBOrder.setFilmName(film.getName());
                     mongoDBOrder.setClassify(film.getClassify());
                 });
-            });
 
-            mongoTemplate.save(mongoDBOrder, "orders");
+        return mongoDBOrder;
+    }
+
+    public void transferAllOrders() {
+        List<Order> allOrders = orderRepository.findAll();
+        mongoTemplate.dropCollection("orders");
+        for (Order order : allOrders) {
+            mongoTemplate.save(convertToMongoOrder(order), "orders");
         }
     }
 
-   public List<MongoDBOrder> getMyOrdersPaged(Integer userId, int pageNo, int pageSize) {
-        Query query = new Query(Criteria.where("customerId").is(userId));
+    public void transferToMyOrders() {
+        List<Order> allOrders = orderRepository.findAll();
+        mongoTemplate.dropCollection("myOrders");
+        for (Order order : allOrders) {
+            mongoTemplate.save(convertToMongoOrder(order), "myOrders");
+        }
+    }
+
+    public List<MongoDBOrder> getMyOrdersPaged(Integer userId, int pageNo, int pageSize) {
+        Integer finalId = (userId != null) ? userId : 79;
+        Query query = new Query(Criteria.where("customerId").is(finalId));
         query.with(Sort.by(Sort.Direction.DESC, "orderTime"));
         query.skip((long) (pageNo - 1) * pageSize).limit(pageSize);
 
         return mongoTemplate.find(query, MongoDBOrder.class, "orders");
-   }
+    }
 
-   public List<Map> getTop3Classify() {
+    public List<Map<String, Object>> getTop3Classify() {
         Aggregation aggregation = Aggregation.newAggregation(
-
                 Aggregation.group("classify")
                         .sum("price").as("totalAmount")
                         .count().as("totalSales"),
@@ -64,6 +81,9 @@ public class MongoDBService {
                 Aggregation.limit(3)
         );
 
-        return mongoTemplate.aggregate(aggregation, "orders", Map.class).getMappedResults();
-   }
+        AggregationResults<Document> results = mongoTemplate.aggregate(aggregation, "orders", Document.class);
+        return results.getMappedResults().stream()
+                .map(doc -> (Map<String, Object>) new HashMap<>(doc))
+                .toList();
+    }
 }
