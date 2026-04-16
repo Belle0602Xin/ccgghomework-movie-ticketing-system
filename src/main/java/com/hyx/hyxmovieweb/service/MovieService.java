@@ -13,6 +13,7 @@ import org.springframework.util.DigestUtils;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -40,11 +41,14 @@ public class MovieService {
         return DigestUtils.md5DigestAsHex(password.getBytes());
     }
 
-    public User login(String username, String password) {
+    public String login(String username, String password) {
         User user = userRepository.findByUsername(username);
 
         if (user != null && user.getPassword().equals(encodePassword(password))) {
-            return user;
+            String token = UUID.randomUUID().toString();
+            redisTemplate.opsForValue().set("login:token:" + token, user, 30, TimeUnit.MINUTES);
+
+            return token;
         }
 
         return null;

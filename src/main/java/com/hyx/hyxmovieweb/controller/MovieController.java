@@ -120,12 +120,10 @@ public class MovieController {
 
     @PostMapping("/login")
     public Result login(@RequestParam String username, @RequestParam String password, HttpSession session) {
-        User user = movieService.login(username, password);
+        String token = movieService.login(username, password);
 
-        if (user != null) {
-            session.setAttribute("currentUser", username);
-
-            return Result.ok("登录成功", user.alias);
+        if (token != null) {
+            return Result.success(token);
         }
         return Result.error("账号或密码错误");
     }

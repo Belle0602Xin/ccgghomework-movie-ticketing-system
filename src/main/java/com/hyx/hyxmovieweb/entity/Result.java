@@ -1,9 +1,21 @@
 package com.hyx.hyxmovieweb.entity;
 
+import lombok.Data;
+
+@Data
 public class Result {
     public int code;
     public String message;
     public Object data;
+
+    public static Result success(Object data) {
+        Result res = new Result();
+        res.code = 0;
+        res.message = "成功";
+        res.data = data;
+
+        return res;
+    }
 
     public static Result ok(String message, Object data) {
         Result res = new Result();

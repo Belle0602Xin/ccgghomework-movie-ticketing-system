@@ -24,8 +24,7 @@ public class TicketPreloadingRunner implements CommandLineRunner {
     @Override
     public void run(@NonNull String... args) {
         filmRepository.findAll().forEach(film -> {
-            String key = "ticket:stock:" + film.getId();
-            redisTemplate.opsForValue().set(key, 100);
+            redisTemplate.opsForHash().put("movie:stocks", String.valueOf(film.getId()), 100);
         });
 
         System.out.println("Redis Warm-up: All movie ticket stocks loaded.");

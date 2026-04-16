@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.bson.Document;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -47,10 +48,34 @@ public class MongoDBService {
 
     public void transferAllOrders() {
         List<Order> allOrders = orderRepository.findAll();
+
+        Map<Integer, Movie> movieMap = movieRepository.findAll().stream()
+                .collect(Collectors.toMap(Movie::getId, m -> m));
+
+        Map<Integer, Film> filmMap = filmRepository.findAll().stream()
+                .collect(Collectors.toMap(Film::getId, f -> f));
+
+        List<MongoDBOrder> mongoOrders = allOrders.stream().map(mo -> {
+            MongoDBOrder mongoDBOrder = new MongoDBOrder();
+            mongoDBOrder.setTicketNo(String.valueOf(System.currentTimeMillis()));
+            mongoDBOrder.setOrderTime(mo.getOrderTime());
+            mongoDBOrder.setQuantity(mo.getTicketsQuality());
+            mongoDBOrder.setPrice(mo.getTotalPrice());
+            mongoDBOrder.setAddress("Secaucus Cinema No." + mo.getScheduleId());
+
+            Movie movie = movieMap.get(mo.getScheduleId());
+            if (movie != null) {
+                Film f = filmMap.get(movie.getFilmId());
+                if (f != null) {
+                    mongoDBOrder.setFilmName(f.getName());
+                    mongoDBOrder.setClassify(f.getClassify());
+                }
+            }
+            return mongoDBOrder;
+        }).toList();
+
         mongoTemplate.dropCollection("orders");
-        for (Order order : allOrders) {
-            mongoTemplate.save(convertToMongoOrder(order), "orders");
-        }
+        mongoTemplate.insertAll(mongoOrders);
     }
 
     public void transferToMyOrders() {
