@@ -84,7 +84,7 @@ public class MovieService {
                     .ifPresent(film -> order.movieName = film.getName());
 
             if (order.movieName == null) {
-                order.movieName = "场次: " + order.scheduleId;
+                order.movieName = "Session ID: " + order.scheduleId;
             }
         }
         return allOrders;
@@ -97,14 +97,13 @@ public class MovieService {
         }
 
         List<Order> orders = orderRepository.findByCustomerId(user.getId());
-
         for (Order order : getOrders(orders)) {
             movieRepository.findById(order.getScheduleId())
                     .flatMap(movie -> filmRepository.findById(movie.getFilmId()))
                     .ifPresent(film -> order.setMovieName(film.getName()));
 
             if (order.movieName == null) {
-                order.movieName = "场次: " + order.scheduleId;
+                order.movieName = "Session ID: " + order.scheduleId;
             }
         }
         return orders;
@@ -116,13 +115,19 @@ public class MovieService {
 
     @Transactional
     public String bookTicket(int mid, int count, String uid) {
+        User user = userRepository.findByUsername(uid);
+        if (user == null) {
+            throw new RuntimeException("User does not exist.");
+        }
+        Integer currentUserId = user.getId();
+
         String lockKey = "lock:movie:" + mid;
         String stockKey = "ticket:stock:" + mid;
 
-        RLock lock = redissonClient.getLock(lockKey);
+        RLock rlock = redissonClient.getLock(lockKey);
 
         try {
-            if (lock.tryLock(3, 10, TimeUnit.SECONDS)) {
+            if (rlock.tryLock(3, 10, TimeUnit.SECONDS)) {
                 Object stockObj = redisTemplate.opsForHash().get("movie:stocks", String.valueOf(mid));
                 int stock = (stockObj != null) ? Integer.parseInt(stockObj.toString()) : 0;
 
@@ -135,31 +140,33 @@ public class MovieService {
                     movieRepository.save(movie);
 
                     Order order = new Order();
+                    order.setCustomerId(currentUserId);
                     order.orderTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
                     order.scheduleId = mid;
-
                     order.ticketsQuality = count;
                     order.totalPrice = count * movie.getMoviePrice();
 
-                    User user = userRepository.findByUsername(uid);
+                    user = userRepository.findByUsername(uid);
                     if (user != null) {
                         order.customerId = user.getId();
                     }
+
                     orderRepository.save(order);
 
                     rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
                         if (ack) {
-                            System.out.println("消息已成功到达 Exchange");
+                            System.out.println("Message successfully reached the Exchange");
                         } else {
-                            System.err.println("消息发送失败: " + cause);
+                            System.err.println("Message failed to send: " + cause);
                         }
+
                     });
 
                     rabbitTemplate.convertAndSend("exchange.order", "newOrder", order);
 
-                    System.out.println("订单消息已推送到 RabbitMQ 队列" + order.id);
+                    System.out.println("Order message pushed to RabbitMQ queue, Order ID: " + order.id);
 
-                    return "Success: User " + uid + " got the ticket.";
+                    return "Success: User: " + uid + "(CustomerID: " + currentUserId + ") successfully got the ticket.";
                 } else {
                     return "Fail: Sold out!";
                 }
@@ -169,15 +176,11 @@ public class MovieService {
 
             return "Fail: System Error";
         } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
+            if (rlock.isHeldByCurrentThread()) {
+                rlock.unlock();
             }
         }
         return "Fail: System busy, try again.";
-    }
-
-    private static double getMoviePrice(Movie movie) {
-        return movie.getMoviePrice();
     }
 
     public void warmUpRedisInventory() {
@@ -193,7 +196,9 @@ public class MovieService {
     }
 }
 
-
+//private static double getMoviePrice(Movie movie) {
+//    return movie.getMoviePrice();
+//}
 //public Movie findMovieById(int mid) {
 //    return movieRepository.findById(mid).orElse(null);
 //}

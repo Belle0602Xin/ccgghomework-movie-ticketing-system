@@ -125,7 +125,7 @@ public class MongoDBService {
         });
 
         if (mongoDBOrder.getAddress() == null) {
-            mongoDBOrder.setAddress("默认影院地址");
+            mongoDBOrder.setAddress("Default Cinema Address");
         }
 
         mongoDBOrder.setTicketNo("T" + System.currentTimeMillis());
@@ -133,6 +133,6 @@ public class MongoDBService {
         mongoTemplate.save(mongoDBOrder, "orders");
         mongoTemplate.save(mongoDBOrder, "myOrders");
 
-        System.out.println("异步入库成功：订单 ID " + order.id + " 已同步至 MongoDB 双集合");
+        System.out.println("Async storage successful: Order ID \" + order.id + \" synchronized to MongoDB dual collections.");
     }
 }

@@ -20,21 +20,21 @@ public class RequestMappingPrinter {
 
     @EventListener(ContextRefreshedEvent.class)
     public void onApplicationEvent() {
-        System.out.println("\n--- 启动自检：所有 API 映射列表 ---");
+        System.out.println("\n--- Startup Self-Check: All Registered API Mappings ---");
 
         Map<String, List<Map.Entry<RequestMappingInfo, HandlerMethod>>> groupedMethods =
                 requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
                         .collect(Collectors.groupingBy(e -> e.getValue().getBeanType().getSimpleName()));
 
         groupedMethods.forEach((className, methods) -> {
-            System.out.println("\n Controller类: [" + className + "]");
+            System.out.println("\n Controller Class: [" + className + "]");
 
             for (Map.Entry<RequestMappingInfo, HandlerMethod> methodEntry : methods) {
-                System.out.println("URL: " + methodEntry.getKey() + " -> 方法: " + methodEntry.getValue().getMethod().getName());
+                System.out.println("URL: " + methodEntry.getKey() + " -> Method: " + methodEntry.getValue().getMethod().getName());
             }
         });
 
-        System.out.println("\n--- 结束自检 ---\n");
+        System.out.println("\n--- End of Self-Check ---\n");
     }
 }
 

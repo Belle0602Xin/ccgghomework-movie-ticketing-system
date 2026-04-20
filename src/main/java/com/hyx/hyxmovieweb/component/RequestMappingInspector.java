@@ -21,7 +21,6 @@ public class RequestMappingInspector implements CommandLineRunner {
         System.out.println("\n--- API Self Inspection Start Scanning Mappings ---");
 
         Map<RequestMappingInfo, HandlerMethod> methods = requestMappingHandlerMapping.getHandlerMethods();
-
         methods.forEach((info, method) -> {
             String className = method.getBeanType().getSimpleName();
             String methodName = method.getMethod().getName();

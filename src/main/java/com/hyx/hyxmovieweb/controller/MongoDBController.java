@@ -41,7 +41,7 @@ public class MongoDBController {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("resultCode", 0);
-        response.put("message", "成功");
+        response.put("message", "Success");
         response.put("data", orders);
 
         return ResponseEntity.ok(response);
@@ -53,7 +53,7 @@ public class MongoDBController {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("resultCode", 0);
-        response.put("message", "成功");
+        response.put("message", "Success");
         response.put("data", statistics);
 
         return ResponseEntity.ok(response);

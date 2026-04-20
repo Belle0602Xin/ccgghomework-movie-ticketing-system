@@ -36,29 +36,29 @@ public class ElasticSearchService {
     public void syncAllToEs() {
         List<Film> films = filmRepository.findAll();
 
-        List<FilmElasticSearch> esList = films.stream().map(f -> {
-            FilmElasticSearch es = new FilmElasticSearch();
-            es.setId(f.getId());
-            es.setName(f.getName());
-            es.setClassify(f.getClassify());
-            es.setDirector(f.getDirector());
-            es.setHero(f.getHero());
-            es.setHeroine(f.getHeroine() == null ? "未知" : f.getHeroine());
-            es.setProduction(f.getProduction() != null ? f.getProduction().toString() : "未知年份");
+        List<FilmElasticSearch> filmESList = films.stream().map(film -> {
+            FilmElasticSearch filmElasticSearch = new FilmElasticSearch();
+            filmElasticSearch.setId(film.getId());
+            filmElasticSearch.setName(film.getName());
+            filmElasticSearch.setClassify(film.getClassify());
+            filmElasticSearch.setDirector(film.getDirector());
+            filmElasticSearch.setHero(film.getHero());
+            filmElasticSearch.setHeroine(film.getHeroine() == null ? "Unknown" : film.getHeroine());
+            filmElasticSearch.setProduction(film.getProduction() != null ? film.getProduction().toString() : "Unknown Year");
 
             try {
                 String outline = jdbcTemplate.queryForObject(
                         "SELECT outline FROM t_outline WHERE id = ?",
-                        String.class, f.getId()
+                        String.class, film.getId()
                 );
-                es.setOutline(outline);
+                filmElasticSearch.setOutline(outline);
             } catch (Exception e) {
-                es.setOutline("暂无大纲");
+                filmElasticSearch.setOutline("No outline available");
             }
-            return es;
+            return filmElasticSearch;
         }).collect(Collectors.toList());
 
-        elasticsearchOperations.save(esList);
+        elasticsearchOperations.save(filmESList);
     }
 
 
@@ -84,7 +84,6 @@ public class ElasticSearchService {
     }
 
     private SearchPage<FilmElasticSearch> performSearch(String content, int pageNo, int pageSize) {
-
         NativeQuery query = NativeQuery.builder()
                 .withQuery(q -> q.multiMatch(m -> m.fields("name", "director").query(content)))
                 .withPageable(PageRequest.of(pageNo, pageSize))
@@ -103,9 +102,8 @@ public class ElasticSearchService {
         Map<String, Long> result = new HashMap<>();
 
         if (searchHits.getAggregations() != null) {
-            ElasticsearchAggregations aggregations = (ElasticsearchAggregations) searchHits.getAggregations();
-
-            aggregations.aggregationsAsMap().get("by_classify").aggregation()
+            ElasticsearchAggregations elasticsearchAggregations = (ElasticsearchAggregations) searchHits.getAggregations();
+            elasticsearchAggregations.aggregationsAsMap().get("by_classify").aggregation()
                     .getAggregate().sterms().buckets().array().forEach(bucket -> {
                         result.put(bucket.key().stringValue(), bucket.docCount());
                     });

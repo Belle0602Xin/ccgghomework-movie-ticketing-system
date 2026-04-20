@@ -16,13 +16,13 @@ public class OrderMessageListener {
 
     @RabbitListener(queues = "queue.mongodb")
     public void onMongodbMessage(Order order) {
-        System.out.println("收到 MongoDB 同步任务：" + "订单 ID：" + order.id);
+        System.out.println("Received MongoDB sync task: Order ID: " + order.id);
         mongoDBService.saveSingleOrder(order);
     }
 
     @RabbitListener(queues = "queue.statistics")
     public void onStatisticsMessage(Order order) {
-        System.out.println("收到分场次统计任务：" + order.id);
+        System.out.println("Received session statistics task for Order ID: " + order.id);
         // statisticsService.update(order);
     }
 }

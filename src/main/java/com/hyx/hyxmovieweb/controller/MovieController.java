@@ -35,40 +35,40 @@ public class MovieController {
         }
 
         if (loginUser == null) {
-            return Result.error("未登录");
+            return Result.error("User not logged in.");
         }
 
         Page<Movie> moviePage = movieService.getMoviesPage(page);
 
-        return Result.ok("查询成功", moviePage);
+        return Result.ok("Query successful.", moviePage);
     }
 
     @PostMapping("/register")
     public Result register(@RequestBody User user, HttpSession session) {
         if (user.username == null || user.username.length() < 3) {
-            return Result.error("账号过短");
+            return Result.error("Username is too short.");
         }
 
         if (user.password == null || user.password.length() < 6 || user.password.length() > 20) {
-            return Result.error("密码长度6~20");
+            return Result.error("Password length must be 6-20 characters.");
         }
 
         if (user.gender == null || user.gender.isEmpty()) {
-            return Result.error("性别不能为空");
+            return Result.error("Gender cannot be empty.");
         }
 
         if (user.alias == null || user.alias.length() < 2 || user.alias.length() > 20) {
-            return Result.error("昵称长度2~20");
+            return Result.error("Nickname length must be 2-20 characters.");
         }
 
         if (user.email == null || user.email.length() < 10 || user.email.length() > 30) {
-            return Result.error("邮箱在10到30个字符");
+            return Result.error("Email must be between 10 and 30 characters.");
         }
 
         movieService.addUser(user);
         session.setAttribute("currentUser", user.username);
 
-        return Result.ok("注册成功");
+        return Result.ok("Registration successful.");
     }
 
     @PostMapping("/ticket-booking")
@@ -97,10 +97,10 @@ public class MovieController {
         }
 
         if (loginUser == null) {
-            return Result.error("未登录，无法查看订单");
+            return Result.error("Not logged in, unable to view orders.");
         }
 
-        return Result.ok("获取成功", movieService.getOrdersByUsername(loginUser));
+        return Result.ok("Orders retrieved successfully.", movieService.getOrdersByUsername(loginUser));
     }
 
     @GetMapping("/sales")
@@ -112,10 +112,10 @@ public class MovieController {
         }
 
         if (loginUser == null) {
-            return Result.error("未登录");
+            return Result.error("User not logged in.");
         }
 
-        return Result.ok("获取成功", movieService.getSalesStatistics());
+        return Result.ok("Statistics retrieved successfully.", movieService.getSalesStatistics());
     }
 
     @PostMapping("/login")
@@ -125,17 +125,17 @@ public class MovieController {
         if (token != null) {
             return Result.success(token);
         }
-        return Result.error("账号或密码错误");
+        return Result.error("Invalid username or password");
     }
 
     @PostMapping("/save")
     public Result save() {
-        return Result.ok("数据库版本自动实时保存");
+        return Result.ok("Database version automatically saved in real-time");
     }
 
     @PostMapping("/load")
     public Result load() {
-        return Result.ok("数据库数据已是最新");
+        return Result.ok("Database data is already up to date.");
     }
 }
 
