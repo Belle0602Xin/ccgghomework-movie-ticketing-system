@@ -38,15 +38,6 @@ Seat Selection: Interactive UI for real-time seat availability visualization.
 
 Admin Dashboard: Comprehensive management of movie catalogs, cinema halls, and dynamic pricing strategies.
 
-🚀 Getting Started
-Prerequisites: JDK 17+, MySQL 8.0, Redis.
-
-Configuration: Update src/main/resources/application.properties with your database credentials.
-
-Run:
-
-Bash
-./mvnw spring-boot:run
 
 👩‍💻 About the Developer
 
